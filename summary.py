@@ -1,6 +1,4 @@
 """LLM summarization of triage findings. Supports Groq (cloud) and Ollama (local)."""
-from dotenv import load_dotenv
-load_dotenv()
 
 import json
 import os
@@ -13,14 +11,13 @@ def _get_client():
     provider = os.environ.get("LLM_PROVIDER", "groq").lower()
 
     if provider == "ollama":
-        # Ollama exposes an OpenAI-compatible endpoint on localhost
         client = OpenAI(
             base_url="http://localhost:11434/v1",
-            api_key="ollama",  # required but ignored
+            api_key="ollama",
         )
-        return client, "llama3.2"
+        model = os.environ.get("OLLAMA_MODEL", "llama3.2")
+        return client, model
 
-    # Default: Groq. Uses the same OpenAI-compatible interface.
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise RuntimeError(
@@ -30,7 +27,8 @@ def _get_client():
         base_url="https://api.groq.com/openai/v1",
         api_key=api_key,
     )
-    return client, "llama-3.3-70b-versatile"
+    model = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+    return client, model
 
 
 def summarize_findings(findings: list[dict], line_count: int) -> str:
